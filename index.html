@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ramen Log</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Ramen Log</p>
+          <h1>ラーメン記録</h1>
+        </div>
+        <div class="top-actions">
+          <button class="ghost-button" type="button" id="shareJumpButton">SNSカード</button>
+          <div class="bowl-mark" aria-hidden="true">
+            <span></span>
+          </div>
+        </div>
+      </header>
+
+      <section class="summary-grid" aria-label="サマリー">
+        <article class="metric">
+          <span>総杯数</span>
+          <strong id="totalCount">0</strong>
+          <small>記録したラーメン</small>
+        </article>
+        <article class="metric">
+          <span>今月</span>
+          <strong id="monthCount">0</strong>
+          <small id="monthLabel">--</small>
+        </article>
+        <article class="metric">
+          <span>平均評価</span>
+          <strong id="averageRating">--</strong>
+          <small>5点満点</small>
+        </article>
+        <article class="metric accent">
+          <span>一番行った店</span>
+          <strong id="favoriteShop">--</strong>
+          <small id="favoriteShopCount">記録なし</small>
+        </article>
+      </section>
+
+      <section class="share-stage" id="shareStage" aria-label="SNS共有カード">
+        <article class="share-card">
+          <div class="share-card-top">
+            <p>Today's Bowl</p>
+            <span id="shareDate">--</span>
+          </div>
+          <div class="share-card-main">
+            <span class="steam-line"></span>
+            <h2 id="shareRamen">まだ記録がありません</h2>
+            <p id="shareShop">ラーメンを保存するとカードに反映されます</p>
+          </div>
+          <div class="share-card-meta">
+            <span id="shareType">--</span>
+            <strong id="shareRating">--</strong>
+            <span id="sharePrice">--</span>
+          </div>
+          <p class="share-memo" id="shareMemo">--</p>
+          <div class="share-card-bottom">
+            <span id="shareMonthStat">今月 0杯</span>
+            <span id="shareTotalStat">通算 0杯</span>
+          </div>
+        </article>
+      </section>
+
+      <section class="workspace">
+        <form class="panel entry-panel" id="ramenForm">
+          <div class="panel-head">
+            <h2 id="formTitle">記録する</h2>
+            <button class="icon-button" type="button" id="todayButton" title="今日の日付に戻す">今日</button>
+          </div>
+
+          <input id="editingId" type="hidden" />
+
+          <label>
+            <span>日付</span>
+            <input id="dateInput" type="date" required />
+          </label>
+          <label>
+            <span>店名</span>
+            <input id="shopInput" type="text" placeholder="例: 人類みな麺類" required />
+          </label>
+          <label>
+            <span>ラーメン名</span>
+            <input id="ramenInput" type="text" placeholder="例: 醤油ラーメン" required />
+          </label>
+          <div class="split-fields">
+            <label>
+              <span>系統</span>
+              <select id="typeInput">
+                <option value="">未選択</option>
+                <option>醤油</option>
+                <option>塩</option>
+                <option>味噌</option>
+                <option>豚骨</option>
+                <option>鶏白湯</option>
+                <option>家系</option>
+                <option>二郎系</option>
+                <option>つけ麺</option>
+                <option>まぜそば</option>
+                <option>その他</option>
+              </select>
+            </label>
+            <label>
+              <span>金額</span>
+              <input id="priceInput" type="number" min="0" step="10" placeholder="1000" />
+            </label>
+          </div>
+          <label>
+            <span>評価</span>
+            <input id="ratingInput" type="range" min="1" max="5" step="0.5" value="4" />
+            <output id="ratingOutput">4.0</output>
+          </label>
+          <label>
+            <span>メモ</span>
+            <textarea id="memoInput" rows="3" placeholder="スープ、麺、並び時間など"></textarea>
+          </label>
+
+          <div class="form-actions">
+            <button class="primary-button" type="submit" id="saveButton">保存</button>
+            <button class="ghost-button" type="button" id="cancelEditButton" hidden>キャンセル</button>
+          </div>
+        </form>
+
+        <section class="panel list-panel">
+          <div class="panel-head list-head">
+            <h2>履歴</h2>
+            <div class="toolbar">
+              <input id="searchInput" type="search" placeholder="店名・ラーメン名で検索" />
+              <button class="ghost-button" type="button" id="exportButton">CSV</button>
+            </div>
+          </div>
+          <div class="filter-row" aria-label="系統フィルター">
+            <button class="filter-chip active" type="button" data-filter="all">全部</button>
+            <button class="filter-chip" type="button" data-filter="醤油">醤油</button>
+            <button class="filter-chip" type="button" data-filter="塩">塩</button>
+            <button class="filter-chip" type="button" data-filter="味噌">味噌</button>
+            <button class="filter-chip" type="button" data-filter="豚骨">豚骨</button>
+            <button class="filter-chip" type="button" data-filter="つけ麺">つけ麺</button>
+          </div>
+          <div class="history-list" id="historyList"></div>
+        </section>
+      </section>
+
+      <section class="insight-grid">
+        <section class="panel period-panel">
+          <div class="panel-head">
+            <h2>月間・年間一覧</h2>
+            <div class="segmented" aria-label="表示単位">
+              <button type="button" class="active" data-period-mode="month">月間</button>
+              <button type="button" data-period-mode="year">年間</button>
+            </div>
+          </div>
+          <div class="period-toolbar">
+            <select id="periodSelect" aria-label="表示期間"></select>
+            <div class="period-stats">
+              <strong id="periodCount">0杯</strong>
+              <span id="periodAverage">平均 --</span>
+            </div>
+          </div>
+          <div class="period-list" id="periodList"></div>
+        </section>
+
+        <section class="panel ranking-panel">
+          <div class="panel-head">
+            <div>
+              <h2>歴代ランキング</h2>
+              <p id="rankingSubtitle">よく食べた店順</p>
+            </div>
+          </div>
+          <div class="filter-row ranking-tabs" aria-label="ランキング種類">
+            <button class="filter-chip active" type="button" data-ranking="shop">店</button>
+            <button class="filter-chip" type="button" data-ranking="ramen">ラーメン</button>
+            <button class="filter-chip" type="button" data-ranking="type">系統</button>
+            <button class="filter-chip" type="button" data-ranking="rating">高評価</button>
+          </div>
+          <div class="ranking-list" id="rankingList"></div>
+        </section>
+      </section>
+    </main>
+
+    <template id="historyItemTemplate">
+      <article class="history-item">
+        <div class="history-main">
+          <div class="history-date-row">
+            <time></time>
+            <span class="type-badge"></span>
+          </div>
+          <h3></h3>
+          <p class="shop-name"></p>
+          <p class="memo"></p>
+        </div>
+        <div class="history-side">
+          <strong class="rating"></strong>
+          <span class="price"></span>
+          <div class="item-actions">
+            <button type="button" class="edit-button">編集</button>
+            <button type="button" class="delete-button">削除</button>
+          </div>
+        </div>
+      </article>
+    </template>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
