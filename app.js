@@ -14,6 +14,7 @@ const memoInput = document.querySelector("#memoInput");
 const todayButton = document.querySelector("#todayButton");
 const saveButton = document.querySelector("#saveButton");
 const cancelEditButton = document.querySelector("#cancelEditButton");
+const autosaveStatus = document.querySelector("#autosaveStatus");
 const shareJumpButton = document.querySelector("#shareJumpButton");
 const searchInput = document.querySelector("#searchInput");
 const exportButton = document.querySelector("#exportButton");
@@ -56,39 +57,20 @@ let activeFilter = "all";
 let periodMode = "month";
 let activePeriod = "";
 let rankingMode = "shop";
+let currentDraftId = "";
+let autosaveTimer = null;
+let isResettingForm = false;
 
 dateInput.value = toDateInputValue(new Date());
 ratingOutput.value = Number(ratingInput.value).toFixed(1);
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();
-
-  const entry = {
-    id: editingId.value || createId(),
-    date: dateInput.value,
-    shop: shopInput.value.trim(),
-    ramen: ramenInput.value.trim(),
-    type: typeInput.value,
-    price: parseOptionalNumber(priceInput.value),
-    rating: Number(ratingInput.value),
-    memo: memoInput.value.trim(),
-    updatedAt: new Date().toISOString(),
-  };
-
-  if (!entry.date || !entry.shop || !entry.ramen) return;
-
-  const existingIndex = entries.findIndex((item) => item.id === entry.id);
-  if (existingIndex >= 0) {
-    entries[existingIndex] = entry;
-  } else {
-    entries.push(entry);
-  }
-
-  entries = sortEntries(entries);
-  saveEntries();
-  resetForm();
-  render();
+  saveCurrentEntry({ resetAfterSave: true, force: true });
 });
+
+form.addEventListener("input", scheduleAutoSave);
+form.addEventListener("change", scheduleAutoSave);
 
 ratingInput.addEventListener("input", () => {
   ratingOutput.value = Number(ratingInput.value).toFixed(1);
@@ -96,6 +78,7 @@ ratingInput.addEventListener("input", () => {
 
 todayButton.addEventListener("click", () => {
   dateInput.value = toDateInputValue(new Date());
+  scheduleAutoSave();
 });
 
 cancelEditButton.addEventListener("click", resetForm);
@@ -147,6 +130,7 @@ historyList.addEventListener("click", (event) => {
   }
 
   if (deleteButton) {
+    if (deleteButton.dataset.id === editingId.value) resetForm();
     entries = entries.filter((entry) => entry.id !== deleteButton.dataset.id);
     saveEntries();
     render();
@@ -227,6 +211,65 @@ function loadEntries() {
 
 function saveEntries() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+}
+
+function scheduleAutoSave() {
+  if (isResettingForm) return;
+  window.clearTimeout(autosaveTimer);
+  autosaveStatus.textContent = hasRequiredEntryFields() ? "入力中..." : "日付・店名・ラーメン名を入れると自動保存";
+  autosaveTimer = window.setTimeout(() => {
+    saveCurrentEntry({ resetAfterSave: false, force: false });
+  }, 650);
+}
+
+function saveCurrentEntry({ resetAfterSave, force }) {
+  const entry = getEntryFromForm();
+
+  if (!entry.date || !entry.shop || !entry.ramen) {
+    if (force) autosaveStatus.textContent = "日付・店名・ラーメン名は必須です";
+    return false;
+  }
+
+  const existingIndex = entries.findIndex((item) => item.id === entry.id);
+  if (existingIndex >= 0) {
+    entries[existingIndex] = entry;
+  } else {
+    entries.push(entry);
+  }
+
+  entries = sortEntries(entries);
+  saveEntries();
+  currentDraftId = entry.id;
+  editingId.value = entry.id;
+  autosaveStatus.textContent = `自動保存済み ${formatTime(new Date())}`;
+  render();
+
+  if (resetAfterSave) {
+    resetForm();
+  }
+
+  return true;
+}
+
+function getEntryFromForm() {
+  const id = editingId.value || currentDraftId || createId();
+  currentDraftId = id;
+
+  return {
+    id,
+    date: dateInput.value,
+    shop: shopInput.value.trim(),
+    ramen: ramenInput.value.trim(),
+    type: typeInput.value,
+    price: parseOptionalNumber(priceInput.value),
+    rating: Number(ratingInput.value),
+    memo: memoInput.value.trim(),
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+function hasRequiredEntryFields() {
+  return Boolean(dateInput.value && shopInput.value.trim() && ramenInput.value.trim());
 }
 
 function sortEntries(items) {
@@ -495,6 +538,7 @@ function startEdit(id) {
   if (!entry) return;
 
   editingId.value = entry.id;
+  currentDraftId = entry.id;
   dateInput.value = entry.date;
   shopInput.value = entry.shop;
   ramenInput.value = entry.ramen;
@@ -504,20 +548,26 @@ function startEdit(id) {
   ratingOutput.value = entry.rating.toFixed(1);
   memoInput.value = entry.memo;
   formTitle.textContent = "編集する";
-  saveButton.textContent = "更新";
+  saveButton.textContent = "更新して次へ";
   cancelEditButton.hidden = false;
+  autosaveStatus.textContent = "編集内容も自動保存されます";
   form.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function resetForm() {
+  isResettingForm = true;
+  window.clearTimeout(autosaveTimer);
   form.reset();
   editingId.value = "";
+  currentDraftId = "";
   dateInput.value = toDateInputValue(new Date());
   ratingInput.value = "4";
   ratingOutput.value = "4.0";
   formTitle.textContent = "記録する";
-  saveButton.textContent = "保存";
+  saveButton.textContent = "保存して次へ";
   cancelEditButton.hidden = true;
+  autosaveStatus.textContent = "日付・店名・ラーメン名を入れると自動保存";
+  isResettingForm = false;
 }
 
 function parseOptionalNumber(value) {
@@ -596,6 +646,13 @@ function formatPrice(value) {
     currency: "JPY",
     maximumFractionDigits: 0,
   }).format(value);
+}
+
+function formatTime(date) {
+  return new Intl.DateTimeFormat("ja-JP", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
 }
 
 function toDateInputValue(date) {

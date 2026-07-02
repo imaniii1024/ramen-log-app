@@ -4,6 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Ramen Log</title>
+    <meta name="apple-mobile-web-app-capable" content="no" />
+    <meta name="mobile-web-app-capable" content="no" />
+    <link rel="manifest" href="./site.webmanifest" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -121,8 +124,9 @@
             <textarea id="memoInput" rows="3" placeholder="スープ、麺、並び時間など"></textarea>
           </label>
 
+          <p class="autosave-status" id="autosaveStatus">日付・店名・ラーメン名を入れると自動保存</p>
           <div class="form-actions">
-            <button class="primary-button" type="submit" id="saveButton">保存</button>
+            <button class="primary-button" type="submit" id="saveButton">保存して次へ</button>
             <button class="ghost-button" type="button" id="cancelEditButton" hidden>キャンセル</button>
           </div>
         </form>

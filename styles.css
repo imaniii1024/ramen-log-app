@@ -445,6 +445,14 @@ output {
   gap: 10px;
 }
 
+.autosave-status {
+  min-height: 22px;
+  margin: -2px 0 12px;
+  color: var(--red-dark);
+  font-size: 0.86rem;
+  font-weight: 900;
+}
+
 .form-actions:has(.ghost-button:not([hidden])) {
   grid-template-columns: 1fr 120px;
 }

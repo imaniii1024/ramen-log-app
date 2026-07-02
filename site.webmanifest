@@ -1,0 +1,9 @@
+{
+  "name": "Ramen Log",
+  "short_name": "Ramen Log",
+  "start_url": "./",
+  "scope": "./",
+  "display": "browser",
+  "background_color": "#f4f6f2",
+  "theme_color": "#bd3b2f"
+}
