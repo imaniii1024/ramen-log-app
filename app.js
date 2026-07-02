@@ -25,6 +25,9 @@ const rankingButtons = document.querySelectorAll("[data-ranking]");
 const periodSelect = document.querySelector("#periodSelect");
 const periodList = document.querySelector("#periodList");
 const rankingList = document.querySelector("#rankingList");
+const copyBackupButton = document.querySelector("#copyBackupButton");
+const backupInput = document.querySelector("#backupInput");
+const restoreBackupButton = document.querySelector("#restoreBackupButton");
 
 const labels = {
   totalCount: document.querySelector("#totalCount"),
@@ -45,6 +48,7 @@ const labels = {
   periodCount: document.querySelector("#periodCount"),
   periodAverage: document.querySelector("#periodAverage"),
   rankingSubtitle: document.querySelector("#rankingSubtitle"),
+  backupStatus: document.querySelector("#backupStatus"),
 };
 
 let entries = loadEntries();
@@ -170,6 +174,45 @@ exportButton.addEventListener("click", () => {
   link.download = `ramen-log-${toDateInputValue(new Date())}.csv`;
   link.click();
   URL.revokeObjectURL(url);
+});
+
+copyBackupButton.addEventListener("click", async () => {
+  const backup = JSON.stringify(
+    {
+      app: "ramen-log",
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      entries,
+    },
+    null,
+    2,
+  );
+  backupInput.value = backup;
+
+  try {
+    await navigator.clipboard.writeText(backup);
+    labels.backupStatus.textContent = `${entries.length}件のバックアップをコピーしました`;
+  } catch {
+    backupInput.focus();
+    backupInput.select();
+    labels.backupStatus.textContent = "コピーできない場合は枠内の文字を手動でコピー";
+  }
+});
+
+restoreBackupButton.addEventListener("click", () => {
+  const result = parseBackup(backupInput.value);
+  if (!result.ok) {
+    labels.backupStatus.textContent = result.message;
+    return;
+  }
+
+  const merged = new Map(entries.map((entry) => [entry.id, entry]));
+  result.entries.forEach((entry) => merged.set(entry.id, entry));
+  entries = sortEntries([...merged.values()]);
+  saveEntries();
+  backupInput.value = "";
+  labels.backupStatus.textContent = `${result.entries.length}件を復元しました`;
+  render();
 });
 
 render();
@@ -481,6 +524,46 @@ function parseOptionalNumber(value) {
   if (!value) return null;
   const number = Number(value);
   return Number.isNaN(number) ? null : number;
+}
+
+function parseBackup(value) {
+  if (!value.trim()) return { ok: false, message: "バックアップを貼り付けてください" };
+
+  try {
+    const parsed = JSON.parse(value);
+    const rawEntries = Array.isArray(parsed) ? parsed : parsed.entries;
+    if (!Array.isArray(rawEntries)) {
+      return { ok: false, message: "バックアップ形式が違います" };
+    }
+
+    const normalized = rawEntries
+      .map(normalizeEntry)
+      .filter((entry) => entry.date && entry.shop && entry.ramen);
+
+    if (!normalized.length) {
+      return { ok: false, message: "復元できる記録がありません" };
+    }
+
+    return { ok: true, entries: normalized };
+  } catch {
+    return { ok: false, message: "バックアップを読み取れませんでした" };
+  }
+}
+
+function normalizeEntry(entry) {
+  const price = Number(entry.price);
+
+  return {
+    id: entry.id || createId(),
+    date: String(entry.date || ""),
+    shop: String(entry.shop || "").trim(),
+    ramen: String(entry.ramen || "").trim(),
+    type: String(entry.type || ""),
+    price: entry.price == null || entry.price === "" || Number.isNaN(price) ? null : price,
+    rating: Number.isFinite(Number(entry.rating)) ? Number(entry.rating) : 4,
+    memo: String(entry.memo || ""),
+    updatedAt: entry.updatedAt || new Date().toISOString(),
+  };
 }
 
 function createId() {

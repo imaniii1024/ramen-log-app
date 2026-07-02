@@ -380,6 +380,7 @@ output {
 }
 
 .primary-button,
+.secondary-button,
 .ghost-button,
 .icon-button,
 .filter-chip,
@@ -398,7 +399,13 @@ output {
   color: #fff;
 }
 
-.primary-button:hover {
+.secondary-button {
+  background: var(--ink);
+  color: #fff;
+}
+
+.primary-button:hover,
+.secondary-button:hover {
   background: var(--red-dark);
 }
 
@@ -410,6 +417,26 @@ output {
   border-color: var(--line);
   background: #fff;
   color: var(--ink);
+}
+
+.transfer-panel {
+  margin-top: 12px;
+}
+
+.transfer-panel .panel-head {
+  align-items: start;
+}
+
+.transfer-panel .panel-head p {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.transfer-panel textarea {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.86rem;
 }
 
 .form-actions {
@@ -749,6 +776,16 @@ time {
   .period-toolbar,
   .ranking-item {
     grid-template-columns: 1fr;
+  }
+
+  .transfer-panel .panel-head {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .transfer-panel .ghost-button,
+  .transfer-panel .secondary-button {
+    width: 100%;
   }
 
   .period-stats {

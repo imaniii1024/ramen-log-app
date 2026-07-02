@@ -182,6 +182,21 @@
           <div class="ranking-list" id="rankingList"></div>
         </section>
       </section>
+
+      <section class="panel transfer-panel">
+        <div class="panel-head">
+          <div>
+            <h2>データ移行</h2>
+            <p id="backupStatus">Safariとホーム画面版の引き継ぎ</p>
+          </div>
+          <button class="ghost-button" type="button" id="copyBackupButton">バックアップをコピー</button>
+        </div>
+        <label>
+          <span>バックアップ貼り付け</span>
+          <textarea id="backupInput" rows="4" placeholder="コピーしたバックアップをここに貼り付け"></textarea>
+        </label>
+        <button class="secondary-button" type="button" id="restoreBackupButton">復元</button>
+      </section>
     </main>
 
     <template id="historyItemTemplate">
